@@ -18,6 +18,7 @@ export const Product ={
 }
 
 export const Cart ={
+	userId,
 	user: {
 		name:'',
 		email:'',
@@ -29,15 +30,16 @@ export const Cart ={
 			product:{},
 			size: 's',
 			qty: 1
-			getProductName:function(){
-				return this.product.name
-			}
+			// getProductName:function(){
+			// 	return this.product.name
+			// }
 		}
-	],
+	]
 }
 
 export const Order ={
 	user: {},
+	userId,
 	userName: '',
 	email:'',
 	status:'shipping',
@@ -46,12 +48,14 @@ export const Order ={
 	totalPrice:0,
 	orderNum: '',
 	items:[
-		product:{},
-		price:0,
-		size:'s',
-		qty:1,
-		sku:'',
-		name:'',
-		image:''
+		{
+			productId,
+			price:0,
+			size:'s',
+			qty:1,
+			sku:'',
+			name:'',
+			image:''
+		}
 	]
 }

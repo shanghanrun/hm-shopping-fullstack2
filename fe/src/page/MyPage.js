@@ -8,12 +8,12 @@ import "../style/orderStatus.style.css";
 import orderStore from '../store/orderStore'
 
 const MyPage = () => {
-  const {orderList, itemsInfo, getOrderList, getOrderList2} = orderStore()
+  const {orderList, itemsInfo, getOrderList, getOrderList} = orderStore()
 
   // 오더리스트가 없다면? 주문한 상품이 없습니다 메세지 보여주기
   useEffect(()=>{
     // getOrderList()
-    getOrderList2()
+    getOrderList()
   },[])
   if(orderList.length ===0){
     return(

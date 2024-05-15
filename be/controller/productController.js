@@ -1,6 +1,9 @@
-const Product = require('../model/Product')
 const ExcelJS = require('exceljs');
 
+const firebaseApp = require('../app')
+const admin = firebaseApp.admin;
+const db = admin.firestore();
+const productsCollection = db.collection('products');
 
 const PAGE_SIZE =5
 const productController={}
@@ -9,8 +12,14 @@ productController.createProduct = async(req, res)=>{
 	try{
 		const {sku,name,image,category,description,stock,price,status,isDeleted} = req.body;
 
-		const newProduct = new Product({sku, name,image,category,description,stock,price,status,isDeleted})
-		await newProduct.save()
+		const newProduct = {sku, name,image,category,
+			description,
+			stock,price,
+			status:'active',
+			isDeleted: 'false'
+		}
+
+		await productsCollection.add(newProduct)
 		
 		return res.status(200).json({status:'ok', data:newProduct})
 	}catch(e){
@@ -58,8 +67,8 @@ productController.batchCreateProducts = async(req, res) => {
 					return; // 이 행을 건너뛰거나 에러 처리
 				}
 
-                const newProduct = new Product({ sku, name, image, category, description, stock, price, status, isDeleted });
-                await newProduct.save();
+                const newProduct = { sku, name, image, category, description, stock, price, status, isDeleted }
+                await productsCollection.add(newProduct)
                 createdProducts.push(newProduct);
             }
         });
@@ -74,25 +83,36 @@ productController.batchCreateProducts = async(req, res) => {
 productController.getProductList=async(req, res)=>{
 	try{
 		const {page, name}= req.query  // ?뒤의 쿼리값
-		const condition = name? { name:{$regex:name, $options:'i'}, isDeleted:false} : {isDeleted:false}
-		// const condition2 = ....  
-		let query = Product.find(condition) //함수를 만들어둠.
-		// query = Product.find(condition2)
-		let response = {status:"success"}  // response 전용객체를 만듬
+		let query = productsCollection.where('isDeleted','==',false);  // firebase 쿼리객체 생성
+		
+		if(name){
+			query = query.where('name','>=',name).where('name','<=',name)
+		}
+		
+		let response ={status: 'success'} // response전용 객체
 
 		if(page){
-			query.skip((page-1)*PAGE_SIZE).limit(PAGE_SIZE)
+			const offset = (page -1)*PAGE_SIZE // skip 부분이다.
+
+			query = query.limit((PAGE_SIZE).offset(offset)
 			//전체페이지(총페이지) = 전체 데이터 /PAGE_SIZE
-			const totalItemNum = await Product.find(condition).countDocuments()
+			const totalItemNumSnapshot = await productsCollection.where('isDeleted','==',false).get()
+			const totalItemNum = totalItemNumSnapshot.size;
+
 			const totalPages = Math.ceil(totalItemNum / PAGE_SIZE)
 			response.totalPageNum = totalPages 
 		}
 
-		const productList = await query.exec() 
+		const querySnapshot = await query.get() //Firebase 쿼리실행
+		const productList =[]
+		
+		// 쿼리 결과를 productList 배열에 추가합니다.
+        querySnapshot.forEach(doc => {
+            productList.push(doc.data());
+        });
+
 		response.data = productList
-		res.status(200).json(response)   
-		// response객체로 들어가면 data: productList, totalPageNum:totalPages 가 되고
-		// 프론트앤드에서는 resp.data.data, resp.data.totalPageNum 으로 받는다. 
+		res.status(200).json(response) 
 		console.log('찾은 productList:', productList)
 	}catch(e){
 		res.status(400).json({status:'fail', error:e.message})
@@ -101,8 +121,9 @@ productController.getProductList=async(req, res)=>{
 productController.getProductById = async(req,res)=>{
 	try{
 		const id = req.params.id
-		const foundProduct = await Product.find({_id:id})
-		if(foundProduct){
+		const productDoc = await productsCollection.doc(id).get();
+		if(productDoc.exists){
+			const foundProduct = productDoc.data()
 			res.status(200).json({status:'ok', data:foundProduct})
 		}
 	}catch(e){
@@ -114,13 +135,17 @@ productController.updateProduct =async(req,res)=>{
 	try{
 		const id = req.params.id
 		const {sku,name,image,category,description,stock,price,status,isDeleted} = req.body;
-		const updatedProduct = await Product.findByIdAndUpdate(
-			{_id:id},
-			{ sku,name,image,category,description,stock,price,status,isDeleted },
-			{ new: true} //새로 업데이트한 데이터를 return해줌 (product값으로 넣어줌)
-		)
-		if(!updatedProduct) throw new Error("item doesn't exist")
-		res.status(200).json({status:'ok', data: updatedProduct})
+
+		// 업데이트할 데이터
+		const updatedProductData = {
+			sku, name,image,category,description,stock,
+			price,status,isDeleted
+		};
+
+		// 제품 컬렉션에서 해당 문서를 업데이트
+      	await productsCollection.doc(id).set(updatedProductData, { merge: true });
+
+		res.status(200).json({status:'ok', data: updatedProductData})
 	}catch(e){
 		res.status(400).json({status:'fail', error:e.message})
 	}
@@ -129,68 +154,85 @@ productController.updateProduct =async(req,res)=>{
 productController.deleteProduct =async(req, res)=>{
   try {
     const id = req.params.id;
-    const product = await Product.findByIdAndUpdate(
-      { _id: id },
-      { isDeleted: true }
-    );
-    if (!product) throw new Error("No item found");
+    // 해당 제품 문서를 가져옴
+    const productRef = productsCollection.doc(id);
+	// isDeleted 필드를 true로 업데이트
+    await productRef.update({ isDeleted: true });
+
     res.status(200).json({ status: "success", message:'A item was deleted successfully' });
   } catch (e) {
     res.status(400).json({ status: "fail", error: e.message });
   }
 };
-// productController.deleteProduct = async(req,res)=>{
-// 	try{
-// 		const id = req.params.id
-// 		const result = await Product.deleteOne({_id:id})
-// 		if (result.deletedCount === 1) {
-// 			res.status(200).json({ status: 'ok', message: 'Item deleted successfully' });
-// 		} else {
-// 			throw new Error("Item doesn't exist");
-// 		}
-// 	}catch(e){
-// 		res.status(400).json({status:'fail', message:e.message})
-// 	}
-// }
-productController.getProductById = async(req,res)=>{
-	try{
-		const id = req.params.id
-		const foundProduct = await Product.findById(id)
-		if (foundProduct) {
-			res.status(200).json({ status: 'ok', data: foundProduct });
-		} else {
-			throw new Error("Item doesn't exist");
-		}
-	}catch(e){
-		res.status(400).json({status:'fail', error:e.message})
-	}
-}
+
+// 실제 삭제하는 코드
+// const productController = {
+//   deleteProduct: async (req, res) => {
+//     try {
+//       const id = req.params.id;
+
+//       // 제품 컬렉션에서 해당 문서를 삭제
+//       await productsCollection.doc(id).delete();
+
+//       // 성공 메시지를 응답으로 보냄
+//       res.status(200).json({ status: "success", message: 'A item was deleted successfully' });
+//     } catch (e) {
+//       // 에러 발생 시 적절한 응답을 보냄
+//       res.status(400).json({ status: "fail", error: e.message });
+//     }
+//   }
+// };
+
+
 productController.checkStock=async(item)=>{
-	// 사려는 아이템 재고 정보 들고오기
-	const product = await Product.findById(item.productId)
-	// 사려는 아이템 qty, 재고 비교
-	// 재고가 불충불하면 불충분 메시지와 함께 데이터 반환
-	// 충분하다면, 재고에서 -qty. 성공
-	if(product.stock[item.size] < item.qty){
-		return {isVerify:false, message: `${product.name}의 ${item.size} 재고가 부족합니다. \n현재 ${product.stock[item.size]}개 재고가 있습니다.`}
+	try{
+		// 사려는 아이템 재고 정보 들고오기
+		const productRef = await productsCollection.doc(item.productId);
+		const productSnapshot = await productRef.get();
+	
+		if (!productSnapshot.exists) {
+		  return {
+			isVerify: false,
+			message: '해당 제품을 찾을 수 없습니다.'
+		  };
+		}
+		// 사려는 아이템 qty, 재고 비교
+		// 재고가 불충불하면 불충분 메시지와 함께 데이터 반환
+		// 충분하다면, 재고에서 -qty. 성공
+		const productData = productSnapshot.data();
+		if (productData.stock[item.size] < item.qty) {
+		  return {
+			isVerify: false,
+			message: `${productData.name}의 ${item.size} 재고가 부족합니다. \n현재 ${productData.stock[item.size]}개 재고가 있습니다.`
+		  };
+		}
+		// 충분한 재고가 있으면 재고에서 qty만큼 빼기
+		const newStock = { ...productData.stock };
+		newStock[item.size] -= item.qty;
+		await productRef.update({ stock: newStock });
+	
+		return { isVerify: true };
+	} catch(e){
+		console.error('재고 확인 및 업데이트 중 오류 발생:', error);
+		return {
+		isVerify: false,
+		message: '재고 확인 및 업데이트 중 오류가 발생했습니다.'
+		};
 	}
-	const newStock = {...product.stock} 
-	// 모양  { s:5, m:2 }  
-	newStock[item.size] -= item.qty
-	product.stock = newStock 
-	await product.save()
-	return {isVerify: true}
 }
 
 productController.checkItemsStock= async (items)=>{
 	const insufficientStockItems =[]
 	await Promise.all(
 		items.map(async(item)=>{
-			const stockCheck = await productController.checkStock(item)
-			if(!stockCheck.isVerify){
-				insufficientStockItems.push({item, message:stockCheck.message})
+			try{
+				const stockCheck = await productController.checkStock(item)
+				if(!stockCheck.isVerify){
+					insufficientStockItems.push({item, message:stockCheck.message})
+				}
+			} catch(e){
+				console.error("Error checking stock:", error);
 			}
-			return
 		})
 	)
 	return insufficientStockItems;

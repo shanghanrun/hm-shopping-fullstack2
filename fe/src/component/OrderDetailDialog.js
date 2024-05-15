@@ -7,7 +7,7 @@ import { currencyFormat } from "../utils/number";
 import orderStore from '../store/orderStore'
 
 const OrderDetailDialog = ({ open, handleClose }) => {
-  const {selectedOrder, updateOrder2} = orderStore()
+  const {selectedOrder, updateOrder} = orderStore()
   console.log('selectedOrder :', selectedOrder)
   const [orderStatus, setOrderStatus] = useState(selectedOrder.status);
 
@@ -17,7 +17,7 @@ const OrderDetailDialog = ({ open, handleClose }) => {
   const submitStatus = (e) => {
     e.preventDefault(); // 이걸 해야 된다!!
     
-    updateOrder2(selectedOrder._id, orderStatus);
+    updateOrder(selectedOrder._id, orderStatus);
     handleClose();
   };
 

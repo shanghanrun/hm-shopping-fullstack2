@@ -1,5 +1,8 @@
-// const {User} = require('../fbModel/model')
 const firebaseApp = require('../app')
+// 파이어베이스 디비
+const admin = firebaseApp.admin;
+const db = admin.firestore();
+const usersCollection = db.collection('users');
 
 const bcrypt = require('bcryptjs')
 const saltRounds =10
@@ -12,11 +15,7 @@ const secretKey = process.env.JWT_SECRET_KEY
 
 const userController={}
 
-// 파이어베이스 디비
-const admin = firebaseApp.admin;
-const db = admin.firestore();
 
-const usersCollection = db.collection('users');
 
 userController.createUser = async(req, res)=>{
 	try{
@@ -112,7 +111,10 @@ userController.loginWithGoogle= async(req, res)=>{
 userController.getUser=async(req, res)=>{
 	try{
 		const userId = req.userId
-		const user = await User.findById(userId)
+		let userSnapshot = await usersCollection.where('email','==',email).get()
+		const userDoc = userSnapshot.docs[0]
+		const user = userDoc.data()
+
 		if(!user){
 			throw new Error('can not find user')
 		}

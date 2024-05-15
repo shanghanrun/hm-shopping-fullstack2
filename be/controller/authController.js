@@ -1,4 +1,9 @@
-const User = require('../model/User')
+const firebaseApp = require('../app')
+// 파이어베이스 디비
+const admin = firebaseApp.admin;
+const db = admin.firestore();
+const usersCollection = db.collection('users');
+
 
 const authController ={}
 const jwt = require('jsonwebtoken')
@@ -8,7 +13,6 @@ const secretKey = process.env.JWT_SECRET_KEY
 authController.authenticate =(req, res, next)=>{
 	try{
 		const tokenString = req.headers.authorization
-		// console.log('tokenString :', tokenString)
 		if(!tokenString){
 			throw new Error('no token')
 		} 
@@ -17,9 +21,6 @@ authController.authenticate =(req, res, next)=>{
 			if(err){
 				throw new Error('invalid token')
 			}
-			//jwt.verify()를 할 때 payload 객체 {_id, 기타} 를 갖고 실행한다.
-			//그래서 검증이 잘되면 payload._id에 id값을 넣어준다.
-			// return res.status(200).json({status:'ok', userId:payload._id})
 			req.userId = payload._id
 		})
 		next()
@@ -31,8 +32,9 @@ authController.authenticate =(req, res, next)=>{
 authController.checkAdminPermission =async(req,res,next)=>{
 	try{   // authController.authenticate에서 넘어온 userId로 level이 admin인지 확인
 		const userId = req.userId
-		const user = await User.findById(userId)
-		if(user.level !== 'admin') throw new Error('no permission')
+		const userDoc = await usersCollection.doc(userId).get();
+		const user = userDoc.data()
+		if(!user || user.level !== 'admin') throw new Error('no permission')
 		next()
 	}catch(e){
 		res.status(400).json({status:'fail', error:e.message})
