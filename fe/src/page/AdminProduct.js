@@ -10,7 +10,7 @@ import ProductTable from "../component/ProductTable";
 
 
 const AdminProduct = () => {
-  const {productList, getProductList, totalPage, setSelectedProduct, deleteProduct, selectedProduct, batchCreateProducts} = productStore()
+  const {productList, getProductList, totalPage, setSelectedProduct, deleteProduct, selectedProduct, batchCreateProducts, batch} = productStore()
   const {showPopup} = uiStore()
   const navigate = useNavigate();
   const [showDialog, setShowDialog] = useState(false);
@@ -34,12 +34,27 @@ const AdminProduct = () => {
     "",
   ];
 
+  // query 값이 변경될 때마다 searchQuery 업데이트
+  useEffect(() => {
+    setSearchQuery({
+      page: query.get("page") || 1,
+      name: query.get("name") || "",
+    });
+  }, [query]);
+  // searchQuery가 변경될 때마다 getProductList 호출
+  useEffect(() => {
+    getProductList(searchQuery);
+  }, [searchQuery, getProductList]);
+
+
   //상품리스트 가져오기 (url쿼리 맞춰서)
   useEffect(()=>{
     getProductList({...searchQuery})
     console.log('query :', query.toString())
     navigate("?" + query.toString() )
   },[query, selectedProduct])
+
+
   useEffect(() => {
     getProductList(searchQuery)
     //검색어나 페이지가 바뀌면 url바꿔주기 (검색어또는 페이지가 바뀜 => url 바꿔줌=> url쿼리 읽어옴=> 이 쿼리값 맞춰서  상품리스트 가져오기)
@@ -87,18 +102,20 @@ const AdminProduct = () => {
     setSelectedFile(file);
   };
   const handleUpload = async () => {
-    if (!selectedFile) {
-      console.error("파일을 선택해주세요.");
-      return;
-    }
-    console.log('selectedFile :', selectedFile)
+    console.log('batch 시작!!')
+    batch(navigate)
+    // if (!selectedFile) {
+    //   console.error("파일을 선택해주세요.");
+    //   return;
+    // }
+    // console.log('selectedFile :', selectedFile)
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    for (let [key, value] of formData.entries()) {
-    console.log('formData: ', key, value);
-}
-    batchCreateProducts(formData, navigate)
+    // const formData = new FormData();
+    // formData.append('file', selectedFile);
+    // for (let [key, value] of formData.entries()) {
+    //     console.log('formData: ', key, value);
+    // }
+    // batch(navigate)
   };
 
   return (

@@ -1,8 +1,4 @@
-const firebaseApp = require('../app')
-// 파이어베이스 디비
-const admin = firebaseApp.admin;
-const db = admin.firestore();
-const usersCollection = db.collection('users');
+const { usersCollection } = require('../firebaseConfig')
 
 
 const authController ={}
@@ -21,8 +17,12 @@ authController.authenticate =(req, res, next)=>{
 			if(err){
 				throw new Error('invalid token')
 			}
+			console.log('payload', payload)
 			req.userId = payload._id
+			console.log('토큰 검증 user Id', payload._id)
 		})
+		
+		console.log('토큰 검증되었음')
 		next()
 	} catch(e){
 		return res.status(400).json({status:'fail', error:e.message})
@@ -32,9 +32,13 @@ authController.authenticate =(req, res, next)=>{
 authController.checkAdminPermission =async(req,res,next)=>{
 	try{   // authController.authenticate에서 넘어온 userId로 level이 admin인지 확인
 		const userId = req.userId
+		console.log('userId :', userId)
 		const userDoc = await usersCollection.doc(userId).get();
 		const user = userDoc.data()
+		console.log('userDoc exists:', userDoc.exists);  // 문서 존재 여부 확인
+		console.log('Fetched user data:', user); 
 		if(!user || user.level !== 'admin') throw new Error('no permission')
+		console.log('admin 검증됨')
 		next()
 	}catch(e){
 		res.status(400).json({status:'fail', error:e.message})

@@ -11,5 +11,5 @@ router.use('/product', productRouter)
 router.use('/cart', cartRouter)
 router.use('/order', orderRouter)
 
-
+console.log('라우터 시작')
 module.exports = router;

@@ -100,6 +100,24 @@ const productStore =create((set,state)=>({
 			uiStore.getState().showToastMessage(e.error, 'error');
 		}
 	},
+	batch: async(navigate)=>{
+		try{
+			const resp = await api2.post('/product/batch')
+			if(resp.status !==200) throw new Error(resp.error)
+			console.log('성공한 데이터:', resp.data.data)
+			uiStore.getState().showToastMessage('상품 일괄가입을 완료했습니다.', 'success');
+
+			set((state)=>({
+				productList: [...state.productList, ...resp.data.data],
+				newProductList:[...state.newProductList, ...resp.data.data]
+			}))
+			navigate('/admin/product')
+		} catch(e){
+			console.log('e.error:', e.error)
+			set({error: e.error})
+			uiStore.getState().showToastMessage(e.error, 'error');
+		}
+	},
 	setSelectedProduct:(product)=>{
 		set({selectedProduct: product})
 	},

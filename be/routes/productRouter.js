@@ -6,7 +6,8 @@ const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
 productRouter.post('/', authController.authenticate, authController.checkAdminPermission, productController.createProduct)
-productRouter.post('/batch', authController.authenticate, authController.checkAdminPermission, upload.single('file'), productController.batchCreateProducts)
+// productRouter.post('/batch', authController.authenticate, authController.checkAdminPermission, upload.single('file'), productController.batchCreateProducts)
+productRouter.post('/batch', authController.authenticate, authController.checkAdminPermission, productController.batch)
 productRouter.get('/', productController.getProductList)
 productRouter.get('/:id', productController.getProductById)
 productRouter.delete('/:id', authController.authenticate, authController.checkAdminPermission, productController.deleteProduct)

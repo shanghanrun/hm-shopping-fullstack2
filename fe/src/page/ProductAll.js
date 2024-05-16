@@ -16,6 +16,7 @@ const ProductAll = () => {
   const {getCart, cartCount} = cartStore()
   const navigate = useNavigate()
   const error =false
+  console.log('ProductAll 페이지 productList:',productList)
   // productList를 구독하고 있으면 된다.
 
   // useEffect(()=>{
@@ -23,6 +24,9 @@ const ProductAll = () => {
   //   //여기서 cartStore의 cart를 업데이트하면,
   //   // Navbar에서 cartCount를 구독하고 있으므로,업데이트가 된다.
   // },[cartCount])
+  // useEffect(()=>{
+  //   getProductList()  Navbar에서 불러온다.
+  // },[])
  
   return (
     <Container>

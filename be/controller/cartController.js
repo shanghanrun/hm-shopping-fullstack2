@@ -1,11 +1,4 @@
-// const Cart = require('../model/Cart')
-// const Product = require('../model/Product')
-
-const firebaseApp = require('../app')
-const admin = firebaseApp.admin;
-const db = admin.firestore();
-const productsCollection = db.collection('products');
-const cartsCollection = db.collection('carts')
+const {productsCollection, cartsCollection} = require('../firebaseConfig')
 
 const cartController={}
 

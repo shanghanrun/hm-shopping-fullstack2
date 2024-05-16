@@ -11,8 +11,8 @@ import uiStore from '../store/uiStore'
 import cartStore from '../store/cartStore'
 
 const PaymentPage = () => {
-  const {setShip, setPayment,createOrder, createOrder} = orderStore()
-  const {cart, cartForOrder} = cartStore()
+  const {setShip, setPayment,createOrder} = orderStore()
+  const {cart} = cartStore()
   const {showToastMessage} = uiStore()
   const {totalPrice} = orderStore()
 

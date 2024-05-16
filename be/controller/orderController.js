@@ -1,16 +1,4 @@
-// const Order = require('../model/Order')
-// const Order2 = require('../model/Order2')
-// const Product = require('../model/Product')
-// const User = require('../model/User')
-
-const firebaseApp = require('../app')
-const admin = firebaseApp.admin;
-const db = admin.firestore();
-const productsCollection = db.collection('products');
-const cartsCollection = db.collection('carts')
-const usersCollection = db.collection('users')
-const ordersCollection = db.collection('orders')
-
+const {usersCollection, productsCollection, cartsCollection, ordersCollection} = require('../firebaseConfig')
 
 const { randomStringGenerator } = require('../utils/randomStringGenerator')
 const productController = require('./productController')

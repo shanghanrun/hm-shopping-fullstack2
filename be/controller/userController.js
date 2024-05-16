@@ -1,8 +1,4 @@
-const firebaseApp = require('../app')
-// 파이어베이스 디비
-const admin = firebaseApp.admin;
-const db = admin.firestore();
-const usersCollection = db.collection('users');
+const { usersCollection } = require('../firebaseConfig')
 
 const bcrypt = require('bcryptjs')
 const saltRounds =10
@@ -14,8 +10,6 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const secretKey = process.env.JWT_SECRET_KEY
 
 const userController={}
-
-
 
 userController.createUser = async(req, res)=>{
 	try{
@@ -57,7 +51,7 @@ userController.loginWithEmail= async(req, res)=>{
 				throw new Error('패스워드가 일치하지 않습니다.')
 			} else{
 				// JWT 생성
-                const token = jwt.sign({ userId: userDoc.id }, secretKey, { expiresIn: '1d' });
+                const token = jwt.sign({ _id: userDoc.id }, secretKey, { expiresIn: '1d' });
 				console.log('로그인 성공')
 				return res.status(200).json({status:'success', user, token})
 			}

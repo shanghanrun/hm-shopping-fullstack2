@@ -1,14 +1,15 @@
 const ExcelJS = require('exceljs');
+const {data1} = require('../data/data');
 
-const firebaseApp = require('../app')
-const admin = firebaseApp.admin;
-const db = admin.firestore();
-const productsCollection = db.collection('products');
+const {productsCollection} = require('../firebaseConfig')
+console.log('productController 시작')
+console.log('productsCollection ', productsCollection)
 
 const PAGE_SIZE =5
 const productController={}
 
 productController.createProduct = async(req, res)=>{
+	console.log('product create 시작')
 	try{
 		const {sku,name,image,category,description,stock,price,status,isDeleted} = req.body;
 
@@ -19,13 +20,44 @@ productController.createProduct = async(req, res)=>{
 			isDeleted: 'false'
 		}
 
-		await productsCollection.add(newProduct)
+		const docRef = await productsCollection.add(newProduct)
+		console.log("Document written with ID: ", docRef.id);
+        return docRef.id; // 성공적으로 문서가 생성된 경우, 문서 ID 반환
 		
 		return res.status(200).json({status:'ok', data:newProduct})
 	}catch(e){
 		return res.status(400).json({status:'fail', error:e.message})
 	}
 }
+productController.batch= async(req, res)=>{
+	try{
+		createdList =[]
+		data = JSON.stringify(data1)
+        const dataList = JSON.parse(data);
+		console.log('dataList :', dataList)
+        for (const item of dataList) {
+            const newProduct = {
+                sku: item.sku,
+                name: item.name,
+                image: item.image,
+                category: item.category,
+                description: item.description,
+                stock: item.stock,
+                price: item.price,
+                status: item.status,
+                isDeleted: item.isDeleted
+            };
+            // productsCollection.add(newProduct)를 비동기적으로 처리
+            await productsCollection.add(newProduct);
+            createdProducts.push(newProduct);
+        }
+		
+		return res.status(200).json({ status: 'ok', data: createdProducts });
+	}catch(e){
+		return res.status(500).json({ status: 'fail', error: e.message });
+	}
+}
+
 productController.batchCreateProducts = async(req, res) => {
 	console.log('batch시작')
     try {
@@ -62,6 +94,7 @@ productController.batchCreateProducts = async(req, res) => {
 				try {
 					const validJSON = convertToValidJSON(stockValue);
 					stock = JSON.parse(validJSON);
+					console.log('parsed stock: ', stock)
 				} catch (e) {
 					console.error(`Stock JSON parsing error at row ${rowNumber}: ${stockValue}`);
 					return; // 이 행을 건너뛰거나 에러 처리
@@ -81,39 +114,42 @@ productController.batchCreateProducts = async(req, res) => {
 
 
 productController.getProductList=async(req, res)=>{
+	console.log('getProductList 시작 ')
 	try{
-		const {page, name}= req.query  // ?뒤의 쿼리값
-		let query = productsCollection.where('isDeleted','==',false);  // firebase 쿼리객체 생성
-		
-		if(name){
-			query = query.where('name','>=',name).where('name','<=',name)
-		}
-		
-		let response ={status: 'success'} // response전용 객체
+		const { page, name } = req.query;  // ?뒤의 쿼리값
+        console.log('name: ', name);
+        let response = { status: 'success' }; // response 전용 객체
 
-		if(page){
-			const offset = (page -1)*PAGE_SIZE // skip 부분이다.
+        // isDeleted가 false인 제품들만 쿼리합니다.
+        let query = productsCollection.where('isDeleted', '==', false);
 
-			query = query.limit((PAGE_SIZE).offset(offset)
-			//전체페이지(총페이지) = 전체 데이터 /PAGE_SIZE
-			const totalItemNumSnapshot = await productsCollection.where('isDeleted','==',false).get()
-			const totalItemNum = totalItemNumSnapshot.size;
+        // 이름 검색 조건이 있다면 해당하는 이름을 포함하는 제품들로 필터링합니다.
+        if (name !== undefined && name !== null && name !== '') {
+            query = query.where('name', '==', name);
+        }
 
-			const totalPages = Math.ceil(totalItemNum / PAGE_SIZE)
-			response.totalPageNum = totalPages 
-		}
+        // 페이지가 지정되었다면 해당 페이지에 해당하는 제품들을 가져오도록 쿼리합니다.
+        if (page !== undefined && page !== null && page !== '') {
+            const offset = (parseInt(page) - 1) * PAGE_SIZE;
+            query = query.limit(PAGE_SIZE).offset(offset);
+        }
 
-		const querySnapshot = await query.get() //Firebase 쿼리실행
-		const productList =[]
-		
-		// 쿼리 결과를 productList 배열에 추가합니다.
-        querySnapshot.forEach(doc => {
-            productList.push(doc.data());
-        });
+        const querySnapshot = await query.get();
+        console.log('querySnapshot:', querySnapshot);
 
-		response.data = productList
-		res.status(200).json(response) 
-		console.log('찾은 productList:', productList)
+        // 쿼리 결과를 배열로 변환하여 response에 할당합니다.
+        const productList = querySnapshot.docs.map(doc => doc.data());
+        response.data = productList;
+
+        // 전체 페이지 수를 계산하여 response에 할당합니다.
+        if (page !== undefined && page !== null && page !== '') {
+            const totalItemNumSnapshot = await productsCollection.where('isDeleted', '==', false).get();
+            const totalItemNum = totalItemNumSnapshot.size;
+            const totalPages = Math.ceil(totalItemNum / PAGE_SIZE);
+            response.totalPageNum = totalPages;
+        }
+
+        res.status(200).json(response);
 	}catch(e){
 		res.status(400).json({status:'fail', error:e.message})
 	}

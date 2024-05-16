@@ -21,6 +21,8 @@ function PriceDropdown() {
       pr1=20000; pr2 = 30000
     } else if(price ==='3만원 이상'){
       pr1= 30000; pr2 = 10000000
+    } else if(price === '모두'){
+      pr1=0 ; pr2= 100000000
     }
     const results = iList.filter(product => 
       product.price >= pr1 && product.price <=pr2)
