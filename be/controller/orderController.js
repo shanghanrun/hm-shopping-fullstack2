@@ -1,4 +1,5 @@
-const {usersCollection, productsCollection, cartsCollection, ordersCollection} = require('../firebaseConfig')
+const {db,usersCollection, productsCollection, cartsCollection, ordersCollection} = require('../firebaseConfig')
+const admin = require("firebase-admin");
 
 const { randomStringGenerator } = require('../utils/randomStringGenerator')
 const productController = require('./productController')
@@ -24,13 +25,14 @@ orderController.createOrder = async(req, res)=>{
 
 		const userDoc = await usersCollection.doc(userId).get()
 		const userData = userDoc.data()
-		const email = user.email
-		const userName = user.name
+		const email = userData.email
+		const userName = userData.name
 
 		const newOrderData = {
 			userId, email, userName,
 			shipTo, contact,totalPrice, items,
-			orderNum, status:'shipping'
+			orderNum, status:'shipping',
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
 		}
 
 		await ordersCollection.add(newOrderData)
@@ -117,7 +119,7 @@ orderController.createOrder = async(req, res)=>{
 // 			const productList = await Promise.all(
 // 			productIds.map(async (productId) => {
 // 				// MongoDB에서 해당 제품 검색
-// 				return await Product.findOne({ _id: productId });
+// 				return await Product.findOne({ id: productId });
 // 			})
 // 			);
 

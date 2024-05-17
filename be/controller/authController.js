@@ -18,8 +18,8 @@ authController.authenticate =(req, res, next)=>{
 				throw new Error('invalid token')
 			}
 			console.log('payload', payload)
-			req.userId = payload._id
-			console.log('토큰 검증 user Id', payload._id)
+			req.userId = payload.id
+			console.log('토큰 검증 user Id', payload.id)
 		})
 		
 		console.log('토큰 검증되었음')

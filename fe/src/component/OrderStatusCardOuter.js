@@ -36,10 +36,14 @@ const OrderStatusCardOuter = ({order}) => {
           </div>
 
           {/* <div className="text-12">{convertUTCtoSeoulDate(date)}</div> */}
-          <div className="text-12">{convertUTCtoSeoulDate(order.updatedAt)}</div>
+          {/* <div className="text-12">{order.createdAt && new Date(order.createdAt._seconds * 1000 + order.createdAt._nanoseconds / 1000000).toString()}</div> */}
+          <div className="text-12">
+            {order.createdAt && new Date(order.createdAt._seconds * 1000 + order.createdAt._nanoseconds / 1000000).toISOString().split('T')[0]}
+          </div>
 
           <div>{name} 외 {order.items.length-1}개</div>
-          <div>₩ {currencyFormat(order.totalPrice)}</div>
+          <div style={{fontWeight:'bold', color:'blue'}}
+          >₩ {currencyFormat(order.totalPrice)}</div>
           <div style={{marginTop:'10px'}}>
             <button onClick={() => setShowDetails(!showDetails)}>
               {showDetails ? "간단히 보기": "주문상품 모두 보기" }

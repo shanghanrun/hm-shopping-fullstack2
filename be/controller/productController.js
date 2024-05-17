@@ -2,8 +2,6 @@ const ExcelJS = require('exceljs');
 const {data1} = require('../data/data');
 
 const {productsCollection} = require('../firebaseConfig')
-console.log('productController 시작')
-console.log('productsCollection ', productsCollection)
 
 const PAGE_SIZE =5
 const productController={}
@@ -21,6 +19,7 @@ productController.createProduct = async(req, res)=>{
 		}
 
 		const docRef = await productsCollection.add(newProduct)
+		console.log('docRef :', docRef)
 		console.log("Document written with ID: ", docRef.id);
         return docRef.id; // 성공적으로 문서가 생성된 경우, 문서 ID 반환
 		
@@ -32,7 +31,7 @@ productController.createProduct = async(req, res)=>{
 productController.batch= async(req, res)=>{
 	try{
 		createdList =[]
-		data = JSON.stringify(data1)
+		const data = JSON.stringify(data1)
         const dataList = JSON.parse(data);
 		console.log('dataList :', dataList)
         for (const item of dataList) {
@@ -135,11 +134,16 @@ productController.getProductList=async(req, res)=>{
         }
 
         const querySnapshot = await query.get();
-        console.log('querySnapshot:', querySnapshot);
 
         // 쿼리 결과를 배열로 변환하여 response에 할당합니다.
-        const productList = querySnapshot.docs.map(doc => doc.data());
-        response.data = productList;
+        // const productList = querySnapshot.docs.map(doc => doc.data());
+		const productList = querySnapshot.docs.map(doc => {
+			const data = doc.data();
+			data.id = doc.id;  // doc.id를 data 객체에 추가
+			return data;
+		});
+
+		response.data = productList;
 
         // 전체 페이지 수를 계산하여 response에 할당합니다.
         if (page !== undefined && page !== null && page !== '') {
@@ -157,9 +161,9 @@ productController.getProductList=async(req, res)=>{
 productController.getProductById = async(req,res)=>{
 	try{
 		const id = req.params.id
-		const productDoc = await productsCollection.doc(id).get();
-		if(productDoc.exists){
-			const foundProduct = productDoc.data()
+		const productDocSnapshot = await productsCollection.doc(id).get();
+		if(productDocSnapshot.exists){
+			const foundProduct = productDocSnapshot.data()
 			res.status(200).json({status:'ok', data:foundProduct})
 		}
 	}catch(e){
@@ -221,12 +225,15 @@ productController.deleteProduct =async(req, res)=>{
 
 
 productController.checkStock=async(item)=>{
+	console.log('재고확인 절차 시작')
+	console.log('item : ', item) 
 	try{
 		// 사려는 아이템 재고 정보 들고오기
 		const productRef = await productsCollection.doc(item.productId);
-		const productSnapshot = await productRef.get();
+		const productDoc = await productRef.get();
+		console.log('검사중인 product :', productDoc.data())
 	
-		if (!productSnapshot.exists) {
+		if (!productDoc.exists) {
 		  return {
 			isVerify: false,
 			message: '해당 제품을 찾을 수 없습니다.'
@@ -235,21 +242,25 @@ productController.checkStock=async(item)=>{
 		// 사려는 아이템 qty, 재고 비교
 		// 재고가 불충불하면 불충분 메시지와 함께 데이터 반환
 		// 충분하다면, 재고에서 -qty. 성공
-		const productData = productSnapshot.data();
-		if (productData.stock[item.size] < item.qty) {
+		const product = productDoc.data();
+		console.log('check하는 product :', product)
+
+		if (product.stock[item.size] < item.qty) {
 		  return {
 			isVerify: false,
-			message: `${productData.name}의 ${item.size} 재고가 부족합니다. \n현재 ${productData.stock[item.size]}개 재고가 있습니다.`
+			message: `${product.name}의 ${item.size} 재고가 부족합니다. \n현재 ${product.stock[item.size]}개 재고가 있습니다.`
 		  };
 		}
 		// 충분한 재고가 있으면 재고에서 qty만큼 빼기
-		const newStock = { ...productData.stock };
+		const newStock = { ...product.stock };
 		newStock[item.size] -= item.qty;
+
+		console.log('여기까지 진행됨')
 		await productRef.update({ stock: newStock });
 	
 		return { isVerify: true };
 	} catch(e){
-		console.error('재고 확인 및 업데이트 중 오류 발생:', error);
+		console.error('재고 확인 및 업데이트 중 오류 발생:', e.error);
 		return {
 		isVerify: false,
 		message: '재고 확인 및 업데이트 중 오류가 발생했습니다.'
@@ -258,6 +269,8 @@ productController.checkStock=async(item)=>{
 }
 
 productController.checkItemsStock= async (items)=>{
+	console.log('checkItemsStock - items :', items)
+
 	const insufficientStockItems =[]
 	await Promise.all(
 		items.map(async(item)=>{

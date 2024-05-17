@@ -19,11 +19,11 @@ const ProductAll = () => {
   console.log('ProductAll 페이지 productList:',productList)
   // productList를 구독하고 있으면 된다.
 
-  // useEffect(()=>{
-  //   if(user) getCart()
-  //   //여기서 cartStore의 cart를 업데이트하면,
-  //   // Navbar에서 cartCount를 구독하고 있으므로,업데이트가 된다.
-  // },[cartCount])
+  useEffect(()=>{
+    if(user) getCart()
+    //여기서 cartStore의 cart를 업데이트하면,
+    // Navbar에서 cartCount를 구독하고 있으므로,업데이트가 된다.
+  },[cartCount])
   // useEffect(()=>{
   //   getProductList()  Navbar에서 불러온다.
   // },[])

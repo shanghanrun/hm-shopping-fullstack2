@@ -57,11 +57,11 @@ const PaymentPage = () => {
         contact:{firstName,lastName,contact},
         items: cart.items.map((item)=>{
           return {
-            productId: item.productId._id,
-            sku: item.productId.sku,
-            name: item.productId.name,
-            image: item.productId.image,
-            price: item.productId.price,
+            productId: item.productId,
+            sku: item.product.sku,
+            name: item.product.name,
+            image: item.product.image,
+            price: item.product.price,
             qty:item.qty,
             size: item.size
           }

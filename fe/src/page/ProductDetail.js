@@ -11,13 +11,13 @@ import { currencyFormat } from "../utils/number";
 import "../style/productDetail.style.css";
 
 const ProductDetail = () => {
-  const {selectedProduct, getProduct} = productStore()
+  const {selectedProduct, getProductById} = productStore()
   const {user} = userStore()
   const {addToCart} = cartStore()
   console.log('디테일 페이지 selectedProduct:', selectedProduct)
   const [size, setSize] = useState("");
   const { id } = useParams();
-  console.log('받은 id :', id)
+  console.log('디테일 페이지가 받은 id :', id)
   const [sizeError, setSizeError] = useState(false);
 
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const ProductDetail = () => {
 
   useEffect(() => {
     //상품 디테일 정보 가져오기
-    getProduct(id)
+    getProductById(id)
   }, [id]);
 
   return (

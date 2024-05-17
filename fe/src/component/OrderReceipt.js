@@ -20,7 +20,7 @@ const OrderReceipt = ({items}) => {
     // if(!items){
     //   return(<div>None</div>)
     // }
-    const newTotal = items.reduce((sum, item) => sum + (item.productId.price * item.qty), 0);
+    const newTotal = items.reduce((sum, item) => sum + (item.product.price * item.qty), 0);
     setTotal(newTotal);
     setTotalPrice(newTotal)
   },[items])
@@ -31,9 +31,9 @@ const OrderReceipt = ({items}) => {
       <ul className="receipt-list">
         <li>
           {items.map((item)=>(
-            <div key={item._id} className="display-flex space-between">
-              <div>{item.productId.name}</div>
-              <div>₩ {currencyFormat(item.productId.price*item.qty)}</div>
+            <div key={item.productId} className="display-flex space-between">
+              <div>{item.product.name}</div>
+              <div>₩ {currencyFormat(item.product.price*item.qty)}</div>
             </div>
           ))}
         </li>

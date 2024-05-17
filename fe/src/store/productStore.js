@@ -125,7 +125,7 @@ const productStore =create((set,state)=>({
 	editProduct:async(formData,navigate)=>{
 		console.log('store로 받은 formData :', formData)
 		try{
-			const resp = await api.put('/product/'+formData._id, formData)
+			const resp = await api.put('/product/'+formData.id, formData)
 			if(resp.status !==200) throw new Error(resp.error)
 			console.log('성공한 데이터:', resp.data.data)
 			set({selectedProduct: resp.data.data})
@@ -161,7 +161,7 @@ const productStore =create((set,state)=>({
 			uiStore.getState().showToastMessage(e.error, 'error');
 		}
 	},
-	getProduct:async(id)=>{
+	getProductById:async(id)=>{
 		console.log('store로 받은 id :', id)
 		try{
 			const resp = await api.get('/product/'+id)

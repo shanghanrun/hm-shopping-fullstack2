@@ -26,7 +26,7 @@ const CartPage = () => {
           <div>
             {cart && cart.items && cart.items.length > 0 ? (
               cart.items.map((item)=>(
-                <CartProductCard key={item._id} item={item}/>
+                <CartProductCard key={item.productId} item={item}/>
               ))
             ) : (
               <div className="text-align-center empty-bag">

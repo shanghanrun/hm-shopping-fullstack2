@@ -20,7 +20,7 @@ const OrderTable = ({ header, data, openEditForm }) => {
               <tr key={index} onClick={() => openEditForm(item)}>
                 <th>{index}</th>
                 <th>{item.orderNum}</th>
-                <th>{item.updatedAt.slice(0, 10)}</th>
+                <th>{item.createdAt && new Date(item.createdAt._seconds * 1000 + item.createdAt._nanoseconds / 1000000).toISOString().split('T')[0]}</th>
                 <th>{item.email}</th>
                 {item.items.length > 0 ? (
                   <th>

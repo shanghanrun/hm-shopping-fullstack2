@@ -26,7 +26,8 @@ userController.createUser = async(req, res)=>{
 			name, 
 			level:level? level :'customer'
 		}
-		await usersCollection.add(newUser)
+		const newUserRef = await usersCollection.add(newUser)
+		const userDocId = newUserRef.id // 이것을 사용하는 것은 나중에 알아서 응용
 		
 		return res.status(200).json({status:'success', data:newUser})
 	}catch(e){
@@ -51,7 +52,7 @@ userController.loginWithEmail= async(req, res)=>{
 				throw new Error('패스워드가 일치하지 않습니다.')
 			} else{
 				// JWT 생성
-                const token = jwt.sign({ _id: userDoc.id }, secretKey, { expiresIn: '1d' });
+                const token = jwt.sign({ id: userDoc.id }, secretKey, { expiresIn: '1d' });
 				console.log('로그인 성공')
 				return res.status(200).json({status:'success', user, token})
 			}

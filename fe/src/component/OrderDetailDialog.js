@@ -17,7 +17,7 @@ const OrderDetailDialog = ({ open, handleClose }) => {
   const submitStatus = (e) => {
     e.preventDefault(); // 이걸 해야 된다!!
     
-    updateOrder(selectedOrder._id, orderStatus);
+    updateOrder(selectedOrder.orderId, orderStatus);
     handleClose();
   };
 
@@ -32,7 +32,7 @@ const OrderDetailDialog = ({ open, handleClose }) => {
       <Modal.Body>
         <p>주문번호: {selectedOrder.orderNum}</p>
         {/* <p>주문날짜: {selectedOrder.updatedAt.slice(0, 10)}</p> */}
-        <p>주문날짜: {selectedOrder.updatedAt ? selectedOrder.updatedAt.slice(0, 10) : '날짜 없음'}</p>
+        <p>주문날짜: {selectedOrder.createdAt ? new Date(selectedOrder.createdAt._seconds * 1000 + selectedOrder.createdAt._nanoseconds / 1000000).toISOString().split('T')[0] : '날짜 없음'}</p>
         <p>이메일: {selectedOrder.email}</p>
         <p>
           주소:{selectedOrder.shipTo.address + " " + selectedOrder.shipTo.city}
@@ -48,7 +48,7 @@ const OrderDetailDialog = ({ open, handleClose }) => {
           <Table>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>SKU</th>
                 <th>Name</th>
                 <th>Unit Price</th>
                 <th>Qty</th>
@@ -58,9 +58,9 @@ const OrderDetailDialog = ({ open, handleClose }) => {
             <tbody>
               {selectedOrder.items.length > 0 &&
                 selectedOrder.items.map((item) => (
-                  <tr key={item._id}>
-                    <td>{item._id}</td>
-                    <td>{item.productId.name}</td>
+                  <tr key={item.productId}>
+                    <td>{item.sku}</td>
+                    <td>{item.name}</td>
                     <td>{currencyFormat(item.price)}</td>
                     <td>{item.qty}</td>
                     <td>{currencyFormat(item.price * item.qty)}</td>

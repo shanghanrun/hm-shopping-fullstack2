@@ -2,7 +2,7 @@ import {create} from 'zustand'
 import api from '../utils/api';
 import uiStore from './uiStore'
 
-const cartStore =create((set,state)=>({
+const cartStore =create((set,get, state)=>({
 	error:'',
 	cart:{},
 	cartCount:0,
@@ -11,15 +11,19 @@ const cartStore =create((set,state)=>({
 	addToCart: async({id,size}) => {
 		try{
 			const resp = await api.post('/cart',{productId:id,size:size})
+			//createCart로 같이 사용한다.
+			
 			if(resp.status !==200) throw new Error(resp.error)
 			console.log('성공한 cart데이터:', resp.data.data)
 			console.log('성공한 cartItemQty:', resp.data.cartItemQty)
-			uiStore.getState().showToastMessage('카트에 추가했습니다.', 'success');
+			uiStore.getState().showToastMessage('카트에 추가했습니다.', 'success');			
 
 			set({
 				cart: resp.data.data,
 				cartCount: resp.data.cartItemQty
 			})
+			//추가하면, 쇼핑백을 업데이트해야 된다.
+			await get().getCart()
 		}catch(e){
 			console.log('에러객체:', e)
 			console.log('e.error:', e.error)

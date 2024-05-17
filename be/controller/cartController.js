@@ -1,4 +1,4 @@
-const {productsCollection, cartsCollection} = require('../firebaseConfig')
+const {usersCollection, productsCollection, cartsCollection} = require('../firebaseConfig')
 
 const cartController={}
 
@@ -6,6 +6,7 @@ cartController.createCartItem = async(req, res)=>{
 	try{
 		const {productId, size} = req.body;
 		const userId = req.userId
+		console.log('userId : ', userId)
 
 		// userId로 부터 사용자 정보 가져오기
         const userDoc = await usersCollection.doc(userId).get();
@@ -15,44 +16,56 @@ cartController.createCartItem = async(req, res)=>{
 		const userData = userDoc.data()
 
 		// productId로 부터 상품정보 가져오기
-		const productDoc = await productsCollection.doc(productId).get()
-		if(!productDoc.exists){
+		const productDocSnapshot = await productsCollection.doc(productId).get()
+		if(!productDocSnapshot.exists){
 			throw new Error('상품을 찾을 수 없습니다.')
 		} 
-		const productData = productDoc.data()
+		const productData = productDocSnapshot.data()
 
 		// 유저의 카트 정보 가져오기
-        const userCartRef = cartsCollection.doc(userId);
-        const userCartSnapshot = await userCartRef.get();
+        // const userCartRef = cartsCollection.doc(userId);   doc에 cartId를 넣어야 된다. 하지만 그건 알 수 없다. 그러므로 where('userId','==',userId)로 찾아야 된다.
 
-		let cartData = { user: userData, items: [] };//기본구조 만들기
+		const userCartQuery = cartsCollection.where('userId', '==', userId);
+		const userCartSnapshot = await userCartQuery.get();
 
-		if (userCartSnapshot.exists) {
-            cartData = userCartSnapshot.data();
+		if (!userCartSnapshot.empty) {
+			const userCartDoc = userCartSnapshot.docs[0];
+			console.log('이미 유저가 있습니다. userCart 정보 userCart:', userCartDoc.data().user.email);
+			
+			const cartData = userCartDoc.data();
+			console.log('그래서 userCartData를 사용합니다.:', cartData)
 
-            // 이미 해당 제품과 사이즈의 아이템이 있는지 확인
-            const existingItemIndex = cartData.items.findIndex(item => item.productId === productId && item.size === size);
+			// 이미 해당 제품과 사이즈의 아이템이 있는지 확인
+			const existingItemIndex = cartData.items.findIndex(item => item.productId === productId && item.size === size);
 			// find와 findIndex는 속도차가 있다.  find는 요소를 추가로 찾기 위해 모든 배열항목을 다시 확인하는 작업을 추가로 한다.
-            if (existingItemIndex !== -1) {
-                return res.status(400).json({ status: 'fail', error: '카트 안에 이미 해당 제품과 size의 아이템이 있습니다.' });
-            }
-			// 새로운 아이템 추가
-			cartData.items.push({ 
+			if (existingItemIndex !== -1) {
+				return res.status(400).json({ status: 'fail', error: '카트 안에 이미 해당 제품과 size의 아이템이 있습니다.' });
+			}
+			// 동일상품이 존재하지 않으면, 새로운 아이템 추가
+			cartData.items.push({
+				productId,  // 필요하다.
 				product: productData, 
 				size, 
 				qty:1 
 			});
-			await userCartRef.set(cartData);
 
-			res.status(200).json({ status: 'ok', data: cartData, cartItemQty: cartItems.length });
-            
-        } else {
-            // 새로운 카트 생성하고 아이템 추가
+			//저장을 위해 cartDoc의 id를 받아오고, cartRef를 찾는다.
+			// userCartDoc의 ID를 사용하여 문서 참조를 생성
+      		const userCartRef = cartsCollection.doc(userCartDoc.id);
+			
+			await userCartRef.set(cartData); //변화된 값을 db에 반영저장
+
+			res.status(200).json({ status: 'ok', data: cartData, cartItemQty: cartData.items.length });
+			
+		} else {
+			console.log('해당 userId를 가진 카트 문서가 없어, 새롭게 cart를 생성합니다.');
+			// 새로운 카트 생성하고 아이템 추가
             const newCartData = {
 				userId,
-				user, 
+				user: userData, 
 				items: [
 					{ 
+						productId,
 						product: productData,
 						size,
 						qty:1
@@ -60,19 +73,31 @@ cartController.createCartItem = async(req, res)=>{
 					] 
 				};
             await cartsCollection.add(newCartData)
+			console.log('새롭게 cart생성 완료:', newCartData)
             res.status(200).json({ status: 'ok', data: newCartData, cartItemQty: 1 });
-        }
+		}
 	}catch(e){
 		return res.status(400).json({status:'fail', error:e.message})
 	}
 }
 
+cartController.getAllUserCart =async(req,res)=>{
+	try{
+		// admin만 가능하게 한다.  이것은 admin페이지에서 사용할 것
+		// userId로 찾는 조건은 없앤다.
+	} catch(e){
+
+	}
+}
 cartController.getCart=async(req, res)=>{
 	try{
 		const userId = req.userId
 		const cartSnapshot = await cartsCollection.where('userId','==', userId).get()
 		const cartDoc = cartSnapshot.docs[0]
 		const cart = cartDoc.data()
+
+		console.log('cart :', cart)
+		console.log('cart.items :', cart.items)
 
 		res.status(200).json({status:'success', data:cart, cartItemQty:cart?.items.length })
 	}catch(e){
