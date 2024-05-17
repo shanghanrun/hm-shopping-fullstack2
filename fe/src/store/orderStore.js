@@ -96,9 +96,9 @@ const orderStore =create((set, state)=>({
 	// 	}
 	// },
 	getOrderList:async(searchQuery)=>{
-		// if(searchQuery.orderNum ===""){
-		// 	delete searchQuery.orderNum
-		// }
+		if(searchQuery.orderNum ===""){
+			delete searchQuery.orderNum
+		}
 		console.log('getOrderList 서치쿼리', searchQuery)
 		try{
 			const resp = await api.get('/order',{params:searchQuery})
