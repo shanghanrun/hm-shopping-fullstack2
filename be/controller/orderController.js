@@ -237,45 +237,126 @@ orderController.createOrder = async(req, res)=>{
 // 	}
 // }
 
+orderController.getAllUserOrderList=async(req,res)=>{
+	try{
+		// admin만 가능하게 한다. adminCheck미들웨어 거침.
+		// userId로 찾는 조건은 없앤다.
+        const { page=1, orderNum } = req.query;
+        let query = db.collection('orders');
+        if(orderNum){
+            const orderSnapshot = await query.get()
+            const tempList = orderSnapshot.docs.map((doc)=>{
+                const order = doc.data()
+                order.orderId = doc.id
+                return order
+            })
+            const orderList = tempList.filter((item)=> item.orderNum.includes(orderNum))
 
+            // 페이지네이션
+            const startAt = (page - 1) * PAGE_SIZE;
+            const paginatedList = orderList.slice(startAt, startAt + PAGE_SIZE);
+            const totalPages = Math.ceil(orderList.length / PAGE_SIZE);
+
+            res.status(200).json({
+                status: 'success',
+                orderList: paginatedList,
+                totalPageNum: totalPages
+            });
+
+            return;
+        } 
+
+        // 페이지네이션 쿼리
+        const totalSnapshot = await query.get();
+        const totalItemNum = totalSnapshot.size;
+        const totalPages = Math.ceil(totalItemNum / PAGE_SIZE);
+        
+        // Firestore 쿼리의 startAt 및 limit를 사용한 페이지네이션
+        const paginatedQuery = query
+            .orderBy('createdAt') // 정렬 기준 필드 (예: orderDate)
+            .startAt((page - 1) * PAGE_SIZE)
+            .limit(PAGE_SIZE);
+
+        const orderSnapshot = await paginatedQuery.get();
+        const orderList = orderSnapshot.docs.map((doc) => {
+            const order = doc.data();
+            order.orderId = doc.id;
+            return order;
+        });
+        console.log('찾은 orderList', orderList);
+
+        res.status(200).json({
+            status: 'success',
+            orderList: orderList,
+            totalPageNum: totalPages
+        });
+	} catch(e){
+        res.status(400).json({ status: 'fail', error: e.message });
+	}
+}
 orderController.getOrderList=async(req, res)=>{
 	try {
-        const { page, orderNum } = req.query;
+        const { page=1, orderNum } = req.query;  //페이지 기본값 1로 설정
+        console.log('받은 orderNum :', orderNum)
         const userId = req.userId;
 
         console.log('다음 유저의 orderList검색: ', userId);
 
         let query = db.collection('orders');
-        let response = { status: 'success' };
-
         if (userId.level !== 'admin') {
             query = query.where('userId', '==', userId);
         }
 
-        if (orderNum) {
-            query = query.where('orderNum', '==', orderNum);
-        }
+        // if (orderNum) {
+        //     query = query.where('orderNum', '==', orderNum);
+        // }  동일한 번호를 찾는 것이 아니라, 포함된 것을 찾는 것이다.
+        if(orderNum){
+            const orderSnapshot = await query.get()
+            const tempList = orderSnapshot.docs.map((doc)=>{
+                const order = doc.data()
+                order.orderId = doc.id
+                return order
+            })
+            const orderList = tempList.filter((item)=> item.orderNum.includes(orderNum))
 
-        console.log('백엔드 page', page);
-
-        if (page) {
+            // 페이지네이션
             const startAt = (page - 1) * PAGE_SIZE;
-            query = query.limit(PAGE_SIZE).offset(startAt);
+            const paginatedList = orderList.slice(startAt, startAt + PAGE_SIZE);
+            const totalPages = Math.ceil(orderList.length / PAGE_SIZE);
 
-            // 전체 페이지 수 가져오기
-            const totalSnapshot = await query.get();
-            const totalItemNum = totalSnapshot.size;
-            const totalPages = Math.ceil(totalItemNum / PAGE_SIZE);
-            response.totalPageNum = totalPages;
-        }
+            res.status(200).json({
+                status: 'success',
+                orderList: paginatedList,
+                totalPageNum: totalPages
+            });
 
-        const orderSnapshot = await query.get();
-        const orderList = orderSnapshot.docs.map(doc => doc.data());
+            return;
+        } 
 
-        response.orderList = orderList;
+        // 페이지네이션 쿼리
+        const totalSnapshot = await query.get();
+        const totalItemNum = totalSnapshot.size;
+        const totalPages = Math.ceil(totalItemNum / PAGE_SIZE);
+        
+        // Firestore 쿼리의 startAt 및 limit를 사용한 페이지네이션
+        const paginatedQuery = query
+            .orderBy('createdAt') // 정렬 기준 필드 (예: orderDate)
+            .startAt((page - 1) * PAGE_SIZE)
+            .limit(PAGE_SIZE);
+
+        const orderSnapshot = await paginatedQuery.get();
+        const orderList = orderSnapshot.docs.map((doc) => {
+            const order = doc.data();
+            order.orderId = doc.id;
+            return order;
+        });
         console.log('찾은 orderList', orderList);
 
-        res.status(200).json(response);
+        res.status(200).json({
+            status: 'success',
+            orderList: orderList,
+            totalPageNum: totalPages
+        });
     } catch (e) {
         res.status(400).json({ status: 'fail', error: e.message });
     }

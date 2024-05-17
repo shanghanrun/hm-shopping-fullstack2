@@ -28,7 +28,7 @@ const MyPage = () => {
   return (
     <Container className="status-card-container">
       {
-        orderList.map((order, i)=>(
+        orderList?.map((order, i)=>(
           <div key={i}>
             <OrderStatusCardOuter order={order} />
             {/* <div>

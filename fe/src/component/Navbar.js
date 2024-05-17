@@ -26,7 +26,7 @@ const Navbar = ({ user }) => {
 	const {logout} = userStore()
   const [query, setQuery] = useSearchParams()
   const [searchQuery, setSearchQuery] =useState({
-    page: query.get('page') || '',
+    page: query.get('page') || 1,
     //productAll 페이지는 페이지네이션 없이 모두 보이게
     name: query.get('name') || '',
   })
@@ -67,9 +67,9 @@ const Navbar = ({ user }) => {
 
   useEffect(()=>{
     getProductList(searchQuery)
-    if(user){
-      getCart()
-    }
+    // if(user){
+    //   getCart()
+    // }
 
     if(searchQuery.name === ''){
       delete searchQuery.name;

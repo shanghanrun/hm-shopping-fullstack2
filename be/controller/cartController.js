@@ -81,14 +81,6 @@ cartController.createCartItem = async(req, res)=>{
 	}
 }
 
-cartController.getAllUserCart =async(req,res)=>{
-	try{
-		// admin만 가능하게 한다.  이것은 admin페이지에서 사용할 것
-		// userId로 찾는 조건은 없앤다.
-	} catch(e){
-
-	}
-}
 cartController.getCart=async(req, res)=>{
 	try{
 		const userId = req.userId

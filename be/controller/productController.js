@@ -116,7 +116,7 @@ productController.getProductList=async(req, res)=>{
 	console.log('getProductList 시작 ')
 	try{
 		const { page, name } = req.query;  // ?뒤의 쿼리값
-        console.log('name: ', name);
+        if(name) console.log('name: ', name);
         let response = { status: 'success' }; // response 전용 객체
 
         // isDeleted가 false인 제품들만 쿼리합니다.

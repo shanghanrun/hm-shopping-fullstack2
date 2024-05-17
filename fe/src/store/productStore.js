@@ -26,11 +26,13 @@ const productStore =create((set,state)=>({
 		// set({productList: results})
 	},
 	getProductList:async(searchQuery)=>{
+		console.log('getProductList 시작 함...')
 		if(searchQuery?.name === ''){
 			delete searchQuery.name;
 		}
 		try{
 			const resp= await api.get('/product', {params: {...searchQuery}})
+			console.log('요청 보내서 받음')
 			if(resp.status !==200) throw new Error(resp.error)
 			console.log('product목록:',resp.data.data)
 			console.log('page 정보 : ',resp.data.totalPageNum)

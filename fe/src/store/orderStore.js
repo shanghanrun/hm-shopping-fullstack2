@@ -96,10 +96,11 @@ const orderStore =create((set, state)=>({
 	// 	}
 	// },
 	getOrderList:async(searchQuery)=>{
-		if(searchQuery.orderNum ===""){
+		if(searchQuery?.orderNum ===""){
 			delete searchQuery.orderNum
 		}
 		console.log('getOrderList 서치쿼리', searchQuery)
+		console.log('입력된 orderNum :', searchQuery?.orderNum )
 		try{
 			const resp = await api.get('/order',{params:searchQuery})
 			if(resp.status !==200) throw new Error(resp.error)
@@ -113,7 +114,27 @@ const orderStore =create((set, state)=>({
 			console.log('e.error:', e.error)
 			set({error: e.error})
 		}
-	}
+	},
+	getAllUserOrderList:async(searchQuery)=>{
+		if(searchQuery?.orderNum ===""){
+				delete searchQuery.orderNum
+			}
+			console.log('getAllUserOrderList 서치쿼리', searchQuery)
+			console.log('입력된 orderNum :', searchQuery?.orderNum )
+			try{
+				const resp = await api.get('/order/all',{params:searchQuery})
+				if(resp.status !==200) throw new Error(resp.error)
+				console.log('order목록:', resp.data.orderList)
+				console.log('page 정보:', resp.data.totalPageNum)
+				set({
+					orderList: resp.data.orderList,
+					totalPageNum: resp.data.totalPageNum
+				})	
+			}catch(e){
+				console.log('e.error:', e.error)
+				set({error: e.error})
+			}
+		},
 }))
 
 export default orderStore;

@@ -6,6 +6,7 @@ const authController = require('../controller/authController')
 router.post('/', authController.authenticate, orderController.createOrder)
 router.post('/', authController.authenticate, orderController.createOrder)
 router.get('/', authController.authenticate, orderController.getOrderList)
+router.get('/all', authController.authenticate, authController.checkAdminPermission, orderController.getAllUserOrderList)
 router.put('/', authController.authenticate, authController.checkAdminPermission, orderController.updateOrder)
 
 module.exports =router
