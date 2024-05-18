@@ -3,7 +3,7 @@ const {data1} = require('../data/data');
 
 const {productsCollection} = require('../firebaseConfig')
 
-const PAGE_SIZE =5
+let PAGE_SIZE =5
 const productController={}
 
 productController.createProduct = async(req, res)=>{
@@ -12,10 +12,10 @@ productController.createProduct = async(req, res)=>{
 		const {sku,name,image,category,description,stock,price,status,isDeleted} = req.body;
 
 		const newProduct = {sku, name,image,category,
-			description,
-			stock,price,
+			description,stock,
+			price: parseInt(price),
 			status:'active',
-			isDeleted: 'false'
+			isDeleted: false
 		}
 
 		const docRef = await productsCollection.add(newProduct)
@@ -30,7 +30,7 @@ productController.createProduct = async(req, res)=>{
 }
 productController.batch= async(req, res)=>{
 	try{
-		createdList =[]
+		createdProducts =[]
 		const data = JSON.stringify(data1)
         const dataList = JSON.parse(data);
 		console.log('dataList :', dataList)
@@ -42,9 +42,9 @@ productController.batch= async(req, res)=>{
                 category: item.category,
                 description: item.description,
                 stock: item.stock,
-                price: item.price,
+                price: parseInt(item.price),
                 status: item.status,
-                isDeleted: item.isDeleted
+                isDeleted: false
             };
             // productsCollection.add(newProduct)를 비동기적으로 처리
             await productsCollection.add(newProduct);
@@ -87,7 +87,8 @@ productController.batchCreateProducts = async(req, res) => {
 				const status = row.getCell(6).value;
                 const category = row.getCell(7).value.split(',').map(item => item.trim())
                 const stockValue = row.getCell(8).value;
-                const isDeleted = row.getCell(9).value === 'TRUE';
+                // const isDeleted = row.getCell(9).value === 'TRUE';
+				const isDeleted = false
 
 				let stock;
 				try {
@@ -111,8 +112,22 @@ productController.batchCreateProducts = async(req, res) => {
     }
 };
 
+productController.getAllProductList=async(req,res)=>{
+	try {
+		const allProductsRef = await productsCollection.get();
+		const allProductsDocs = allProductsRef.docs.filter(doc => 
+			doc.data().isDeleted === false);
+		const allProducts = allProductsDocs.map(doc=> doc.data())
+
+		res.status(200).json({status:'success', data:allProducts});
+	} catch (e) {
+		console.error("Error getting products: ", e);
+		res.status(500).json({ error: "Failed to get products" });
+	}
+}
 
 productController.getProductList=async(req, res)=>{
+	PAGE_SIZE = 10
 	console.log('getProductList 시작 ')
 	try{
 		const { page, name } = req.query;  // ?뒤의 쿼리값
@@ -142,8 +157,27 @@ productController.getProductList=async(req, res)=>{
 			data.id = doc.id;  // doc.id를 data 객체에 추가
 			return data;
 		});
+		// sku에서 숫자 부분을 추출하고 이를 기준으로 내림차순 정렬
+		productList.sort((a, b) => {
+			const skuA = parseInt(a.sku.replace(/\D/g, ''), 10); // 'sku001'에서 숫자 부분 '001'을 추출하고 정수로 변환
+			const skuB = parseInt(b.sku.replace(/\D/g, ''), 10); // 'sku002'에서 숫자 부분 '002'를 추출하고 정수로 변환
+			return skuB - skuA; // 내림차순 정렬
+		});
+
+		// 최신 날짜부터 내림차순으로 보여주기
+		// productList.sort((a, b) => {
+		// 	const dateA = a.createdAt.toDate(); // Firestore 타임스탬프를 JavaScript Date 객체로 변환
+		// 	const dateB = b.createdAt.toDate(); // Firestore 타임스탬프를 JavaScript Date 객체로 변환
+		// 	return dateB - dateA; // 내림차순 정렬
+		// });
 
 		response.data = productList;
+
+		// 페이지네이션이 되지 않은 전체 리스트의 count구하기
+		const allProductsRef = await productsCollection.get();
+		const allProductsDocs = allProductsRef.docs.filter(doc => 
+			doc.data().isDeleted === false);
+		response.totalProductCount = allProductsDocs.length
 
         // 전체 페이지 수를 계산하여 response에 할당합니다.
         if (page !== undefined && page !== null && page !== '') {

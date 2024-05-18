@@ -243,6 +243,7 @@ orderController.getAllUserOrderList=async(req,res)=>{
 		// userId로 찾는 조건은 없앤다.
         const { page=1, orderNum } = req.query;
         let query = db.collection('orders');
+        let totalCount;
         if(orderNum){
             const orderSnapshot = await query.get()
             const tempList = orderSnapshot.docs.map((doc)=>{
@@ -250,7 +251,11 @@ orderController.getAllUserOrderList=async(req,res)=>{
                 order.orderId = doc.id
                 return order
             })
+
             const orderList = tempList.filter((item)=> item.orderNum.includes(orderNum))
+
+            totalCount = orderList.length
+            console.log('orderNum이 있을 경우 totalCount:', totalCount)
 
             // 페이지네이션
             const startAt = (page - 1) * PAGE_SIZE;
@@ -260,11 +265,17 @@ orderController.getAllUserOrderList=async(req,res)=>{
             res.status(200).json({
                 status: 'success',
                 orderList: paginatedList,
-                totalPageNum: totalPages
+                totalPageNum: totalPages,
+                totalCount: totalCount
             });
 
             return;
         } 
+
+        const allOrdersRef = await ordersCollection.get();
+        const allOrdersDocs = allOrdersRef.docs
+
+        totalCount = allOrdersDocs.length
 
         // 페이지네이션 쿼리
         const totalSnapshot = await query.get();
@@ -288,7 +299,8 @@ orderController.getAllUserOrderList=async(req,res)=>{
         res.status(200).json({
             status: 'success',
             orderList: orderList,
-            totalPageNum: totalPages
+            totalPageNum: totalPages,
+            totalCount: totalCount
         });
 	} catch(e){
         res.status(400).json({ status: 'fail', error: e.message });
@@ -296,6 +308,13 @@ orderController.getAllUserOrderList=async(req,res)=>{
 }
 orderController.getOrderList=async(req, res)=>{
 	try {
+
+        // 페이지네이션이 되지 않은 전체 리스트의 count구하기
+		const allOrdersRef = await ordersCollection.get();
+		const allOrdersDocs = allOrdersRef.docs.filter(doc => 
+			doc.data().isDeleted === false);
+		const totalOrdersCount = allOrdersDocs.length
+
         const { page=1, orderNum } = req.query;  //페이지 기본값 1로 설정
         console.log('받은 orderNum :', orderNum)
         const userId = req.userId;
@@ -327,7 +346,8 @@ orderController.getOrderList=async(req, res)=>{
             res.status(200).json({
                 status: 'success',
                 orderList: paginatedList,
-                totalPageNum: totalPages
+                totalPageNum: totalPages,
+                totalCount: totalOrdersCount
             });
 
             return;
@@ -355,7 +375,8 @@ orderController.getOrderList=async(req, res)=>{
         res.status(200).json({
             status: 'success',
             orderList: orderList,
-            totalPageNum: totalPages
+            totalPageNum: totalPages,
+            totalCount: totalOrdersCount
         });
     } catch (e) {
         res.status(400).json({ status: 'fail', error: e.message });

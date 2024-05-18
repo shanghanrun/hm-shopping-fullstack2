@@ -11,6 +11,7 @@ const orderStore =create((set, state)=>({
 	selectedOrder:{},
 	orderList:[],
 	totalPageNum:1,
+	totalCount:1,
 	itemsList:[],
 	nameList:[],
 	imageList:[],
@@ -99,8 +100,8 @@ const orderStore =create((set, state)=>({
 		if(searchQuery?.orderNum ===""){
 			delete searchQuery.orderNum
 		}
-		console.log('getOrderList 서치쿼리', searchQuery)
-		console.log('입력된 orderNum :', searchQuery?.orderNum )
+		console.log('서치쿼리', searchQuery)
+		console.log('입력orderNum :', searchQuery?.orderNum )
 		try{
 			const resp = await api.get('/order',{params:searchQuery})
 			if(resp.status !==200) throw new Error(resp.error)
@@ -108,7 +109,7 @@ const orderStore =create((set, state)=>({
 			console.log('page 정보:', resp.data.totalPageNum)
 			set({
 				orderList: resp.data.orderList,
-				totalPageNum: resp.data.totalPageNum
+				totalPageNum: resp.data.totalPageNum,
 			})	
 		}catch(e){
 			console.log('e.error:', e.error)
@@ -116,19 +117,23 @@ const orderStore =create((set, state)=>({
 		}
 	},
 	getAllUserOrderList:async(searchQuery)=>{
+		console.log('getAllUserOrderList 시작됨!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+
 		if(searchQuery?.orderNum ===""){
 				delete searchQuery.orderNum
 			}
 			console.log('getAllUserOrderList 서치쿼리', searchQuery)
-			console.log('입력된 orderNum :', searchQuery?.orderNum )
+			console.log('all user에 입력된 orderNum :', searchQuery?.orderNum )
 			try{
 				const resp = await api.get('/order/all',{params:searchQuery})
 				if(resp.status !==200) throw new Error(resp.error)
+				console.log('resp.data:', resp.data)
 				console.log('order목록:', resp.data.orderList)
 				console.log('page 정보:', resp.data.totalPageNum)
 				set({
 					orderList: resp.data.orderList,
-					totalPageNum: resp.data.totalPageNum
+					totalPageNum: resp.data.totalPageNum,
+					totalCount: resp.data.totalCount
 				})	
 			}catch(e){
 				console.log('e.error:', e.error)

@@ -12,6 +12,7 @@ const productStore =create((set,state)=>({
 	productList:[],
 	initialProductList:[],
 	totalPage:1,
+	totalProductCount:1,
 	newProductList:[], // 신상 공개용 리스트 
 	emptyNewProductList:()=>set({newProductList:[]}), 
 	setProducts:(results)=>{
@@ -25,6 +26,18 @@ const productStore =create((set,state)=>({
 		// console.log('results list: ', results)
 		// set({productList: results})
 	},
+	getAllProductList:async()=>{
+		try{
+			const resp= await api.get('/product/all')
+
+			if(resp.status !==200) throw new Error(resp.error)
+			console.log('All product목록:',resp.data.data)
+			set({productList: resp.data.data})
+		}catch(e){
+			console.log('e.error:', e.error)
+			set({error: e.error})
+		}
+	},
 	getProductList:async(searchQuery)=>{
 		console.log('getProductList 시작 함...')
 		if(searchQuery?.name === ''){
@@ -36,9 +49,12 @@ const productStore =create((set,state)=>({
 			if(resp.status !==200) throw new Error(resp.error)
 			console.log('product목록:',resp.data.data)
 			console.log('page 정보 : ',resp.data.totalPageNum)
-			set({totalPage: resp.data.totalPageNum})
-			const list = resp.data.data
-			console.log('list :', list)
+			set({
+				totalPage: resp.data.totalPageNum,
+				totalProductCount: resp.data.totalProductCount
+			})
+			// const list = resp.data.data
+			// console.log('list :', list)
 			// productList와 list가 동일한지를 판별하는 조건 추가
       		// if (JSON.stringify(state.productList) === JSON.stringify(list)) {
 			// 	return;
@@ -52,7 +68,7 @@ const productStore =create((set,state)=>({
 			// }
 
 			set({
-				productList: [...list],    	initialProductList:[...list]})	
+				productList: [...resp.data.data],    	initialProductList:[...resp.data.data]})	
 		}catch(e){
 			console.log('e.error:', e.error)
 			set({error: e.error})

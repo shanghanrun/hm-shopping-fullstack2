@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Container, Button } from "react-bootstrap";
 import SearchBox from "../component/SearchBox";
 import productStore from '../store/productStore'
+import orderStore from '../store/orderStore'
 import uiStore from '../store/uiStore'
 import NewItemDialog from "../component/NewItemDialog";
 import ReactPaginate from "react-paginate";
@@ -10,7 +11,8 @@ import ProductTable from "../component/ProductTable";
 
 
 const AdminProduct = () => {
-  const {productList, getProductList, totalPage, setSelectedProduct, deleteProduct, selectedProduct, batchCreateProducts, batch} = productStore()
+  const {productList, getProductList, totalPage, setSelectedProduct, deleteProduct, totalProductCount, selectedProduct, batchCreateProducts, batch} = productStore()
+  const {getAllUserOrderList} = orderStore()
   const {showPopup} = uiStore()
   const navigate = useNavigate();
   const [showDialog, setShowDialog] = useState(false);
@@ -33,6 +35,11 @@ const AdminProduct = () => {
     "Status",
     "",
   ];
+
+
+  useEffect(()=>{
+    getAllUserOrderList(searchQuery) //order 페이지를 위해 미리 데이터를 로딩해 둔다.
+  },[])
 
   // query 값이 변경될 때마다 searchQuery 업데이트
   useEffect(() => {
@@ -138,7 +145,7 @@ const AdminProduct = () => {
         <Button className="mt-2 mb-2" onClick={handleClickNewItem}>
           Add New Item +
         </Button>
-
+        <h5>Total Products: {totalProductCount} 품목</h5>
         <ProductTable
           header={tableHeader}
           data={productList}

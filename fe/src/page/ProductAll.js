@@ -11,7 +11,7 @@ import Popup from "../component/Popup";
 
 
 const ProductAll = () => {
-  const {productList, getProductList} = productStore()
+  const {productList, getAllProductList} = productStore()
   const {getOrderList} = orderStore()
   const {user} = userStore()
   const {popupContent} = uiStore() 
@@ -22,6 +22,7 @@ const ProductAll = () => {
   // productList를 구독하고 있으면 된다.
 
   useEffect(()=>{
+    getAllProductList()
     if(user) {getCart(); getOrderList()}
     //여기서 cartStore의 cart를 업데이트하면,
     // Navbar에서 cartCount를 구독하고 있으므로,업데이트가 된다.
